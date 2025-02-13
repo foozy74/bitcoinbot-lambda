@@ -16,9 +16,11 @@ class MovingAverageCrossover:
 
         # Generate trading signals
         signals['signal'] = 0
-        # Use boolean indexing instead of positional indexing
-        signals.loc[signals.index >= signals.index[self.long_window], 'signal'] = np.where(
-            signals['SMA_short'] > signals['SMA_long'],
+        # Create a mask for valid entries (after both MAs are available)
+        valid_entries = signals.index >= signals.index[self.long_window - 1]
+        # Use boolean indexing with the mask
+        signals.loc[valid_entries, 'signal'] = np.where(
+            signals.loc[valid_entries, 'SMA_short'] > signals.loc[valid_entries, 'SMA_long'],
             1,
             0
         )
