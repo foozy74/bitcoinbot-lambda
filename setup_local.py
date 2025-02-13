@@ -8,6 +8,26 @@ def check_python_version():
         print("Error: Python 3.9 or higher is required")
         sys.exit(1)
 
+def generate_requirements():
+    """Generate requirements.txt file"""
+    requirements = [
+        'streamlit',
+        'pandas',
+        'numpy',
+        'plotly',
+        'python-dotenv',
+        'boto3',
+        'ccxt',
+        'sqlalchemy',
+        'psycopg2-binary'
+    ]
+
+    print("Generating requirements.txt...")
+    with open('requirements.txt', 'w') as f:
+        for package in requirements:
+            f.write(f"{package}\n")
+    print("Generated requirements.txt")
+
 def install_dependencies():
     """Install required packages"""
     packages = [
@@ -21,7 +41,7 @@ def install_dependencies():
         'sqlalchemy',
         'psycopg2-binary'
     ]
-    
+
     print("Installing required packages...")
     for package in packages:
         try:
@@ -45,6 +65,7 @@ PORT=5000
 if __name__ == "__main__":
     print("Setting up Bitcoin Trading Bot development environment...")
     check_python_version()
+    generate_requirements()
     install_dependencies()
     setup_environment()
     print("\nSetup complete! You can now run the trading bot with:")

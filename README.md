@@ -8,6 +8,7 @@ python setup_local.py
 ```
 This script will:
 - Check Python version compatibility
+- Generate requirements.txt file
 - Install required dependencies
 - Create local environment configuration
 
@@ -15,6 +16,21 @@ This script will:
 ```bash
 streamlit run trading_bot.py
 ```
+
+## AWS Deployment
+
+1. Make sure you have AWS CLI installed and configured:
+```bash
+aws configure
+```
+
+2. Deploy to AWS Elastic Beanstalk:
+```bash
+cd Bitcoinbot  # Make sure you're in the project root directory
+python cloudformation/deploy.py --stack-name bitcoin-bot-stack --db-password your-secure-password
+```
+
+Note: Run the deploy command from the project root directory, not from inside the cloudformation folder.
 
 ## Features
 - Real-time Bitcoin price monitoring
