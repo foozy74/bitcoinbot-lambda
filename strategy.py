@@ -16,8 +16,9 @@ class MovingAverageCrossover:
 
         # Generate trading signals
         signals['signal'] = 0
-        signals.loc[self.long_window:, 'signal'] = np.where(
-            signals['SMA_short'][self.long_window:] > signals['SMA_long'][self.long_window:],
+        # Use boolean indexing instead of positional indexing
+        signals.loc[signals.index >= signals.index[self.long_window], 'signal'] = np.where(
+            signals['SMA_short'] > signals['SMA_long'],
             1,
             0
         )
@@ -54,7 +55,7 @@ class MovingAverageCrossover:
                 position = 1
 
                 trades.append({
-                    'timestamp': current_time,  # Store timestamp instead of index
+                    'timestamp': current_time,
                     'type': 'BUY',
                     'price': float(entry_price),
                     'amount': float(btc_amount),
@@ -70,7 +71,7 @@ class MovingAverageCrossover:
                 position = 0
 
                 trades.append({
-                    'timestamp': current_time,  # Store timestamp instead of index
+                    'timestamp': current_time,
                     'type': 'SELL',
                     'price': float(exit_price),
                     'amount': float(btc_amount),
