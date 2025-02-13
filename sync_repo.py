@@ -19,66 +19,99 @@ def run_command(command):
         print(f"Error output: {e.stderr}")
         raise
 
+def setup_git_config():
+    """Set up Git configuration"""
+    print("Setting up Git configuration...")
+    try:
+        # Check if git config exists
+        run_command('git config user.name "Bitcoin Bot"')
+        run_command('git config user.email "bot@example.com"')
+        print("Git configuration completed")
+        return True
+    except Exception as e:
+        print(f"Error setting up git config: {str(e)}")
+        return False
+
 def sync_repository(repo_url=None, branch='main'):
     """Sync local repository with GitHub"""
     if not repo_url:
-        # Default to the Bitcoin bot repository
-        repo_url = "https://github.com/foozy74/Bitcoinbot.git"
-    
+        # Default to the Bitcoin bot Lambda repository
+        repo_url = "https://github.com/foozy74/bitcoinbot-lambda.git"
+
     print("Starting repository synchronization...")
-    
+
+    # Set up git configuration
+    if not setup_git_config():
+        print("Failed to set up git configuration")
+        return False
+
     # Check if git is initialized
     if not Path('.git').exists():
         print("Initializing git repository...")
         run_command('git init')
-    
+
     # Check if remote exists
     try:
         current_remote = run_command('git remote get-url origin')
     except subprocess.CalledProcessError:
         current_remote = None
-    
+
     if current_remote is None or current_remote.strip() != repo_url:
         if current_remote:
             print("Updating remote URL...")
             run_command('git remote remove origin')
         run_command(f'git remote add origin {repo_url}')
-    
-    # Fetch latest changes
-    print("Fetching latest changes...")
-    run_command('git fetch origin')
-    
-    # Check current branch
+
+    # Add all files
+    print("Adding files to repository...")
+    run_command('git add .')
+
+    # Commit changes
+    print("Committing changes...")
     try:
-        current_branch = run_command('git branch --show-current').strip()
+        run_command('git commit -m "Initial commit: Lambda implementation of Bitcoin Trading Bot"')
     except subprocess.CalledProcessError:
-        current_branch = None
-    
-    if current_branch != branch:
-        print(f"Switching to {branch} branch...")
-        try:
-            run_command(f'git checkout {branch}')
-        except subprocess.CalledProcessError:
-            run_command(f'git checkout -b {branch}')
-            run_command(f'git branch --set-upstream-to=origin/{branch} {branch}')
-    
-    # Pull latest changes
-    print("Pulling latest changes...")
+        print("No changes to commit")
+
+    # Push to remote
+    print("Pushing to remote repository...")
+    print("\nIMPORTANT: To push to GitHub, you need to:")
+    print("1. Create the repository on GitHub first")
+    print("2. Use a personal access token for authentication")
+    print("3. Set the token as an environment variable:")
+    print("   export GITHUB_TOKEN=your_token_here\n")
+
     try:
-        run_command('git pull origin main')
-        print("Successfully synchronized repository!")
-    except subprocess.CalledProcessError as e:
-        if "resolve conflicts" in str(e.stderr):
-            print("Merge conflicts detected. Please resolve conflicts manually.")
+        # Check if we have a token
+        github_token = os.getenv('GITHUB_TOKEN')
+        if not github_token:
+            print("ERROR: GITHUB_TOKEN environment variable not set")
+            print("Please set up your GitHub token and try again")
             return False
-        raise
-    
+
+        # Use token in remote URL
+        token_url = f"https://{github_token}@github.com/foozy74/bitcoinbot-lambda.git"
+        run_command(f'git remote set-url origin {token_url}')
+
+        try:
+            run_command(f'git push -u origin {branch}')
+            print("Successfully synchronized repository!")
+        except subprocess.CalledProcessError as e:
+            if "remote repository is empty" in str(e.stderr):
+                run_command(f'git push -u origin {branch}')
+                print("Successfully synchronized repository!")
+            else:
+                raise
+    except Exception as e:
+        print(f"Error pushing to repository: {str(e)}")
+        return False
+
     return True
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Sync Bitcoin Trading Bot repository')
+    parser = argparse.ArgumentParser(description='Sync Bitcoin Trading Bot Lambda repository')
     parser.add_argument('--repo', help='GitHub repository URL')
     parser.add_argument('--branch', default='main', help='Branch to sync (default: main)')
-    
+
     args = parser.parse_args()
     sync_repository(args.repo, args.branch)

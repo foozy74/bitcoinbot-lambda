@@ -1,0 +1,106 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Bitcoin Trading Bot Lambda Infrastructure Stack'
+
+Parameters:
+  DBPassword:
+    NoEcho: true
+    Type: String
+    Description: PostgreSQL database password
+    MinLength: 8
+    MaxLength: 41
+    
+  EnvironmentName:
+    Type: String
+    Default: Production
+    Description: Environment name for the application
+
+Resources:
+  TradingBotLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: RDSAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - rds-db:connect
+                Resource: !Sub arn:aws:rds-db:${AWS::Region}:${AWS::AccountId}:dbuser/*
+
+  TradingBotLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-trading-bot
+      Handler: lambda_handler.lambda_handler
+      Role: !GetAtt TradingBotLambdaRole.Arn
+      Code:
+        ZipFile: |
+          # Lambda function code will be deployed separately
+      Runtime: python3.9
+      Timeout: 300
+      MemorySize: 512
+      Environment:
+        Variables:
+          DATABASE_URL: !Sub postgresql://${DatabaseInstance.MasterUsername}:${DBPassword}@${DatabaseInstance.Endpoint.Address}:${DatabaseInstance.Endpoint.Port}/${DatabaseInstance.DBName}
+          TRADING_TIMEFRAME: '1d'
+          LOOKBACK_PERIOD: '100'
+          INITIAL_BALANCE: '10000'
+          SHORT_WINDOW: '20'
+          LONG_WINDOW: '50'
+
+  # Schedule the Lambda function to run daily
+  TradingBotScheduleRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: "Schedule trading bot Lambda function"
+      ScheduleExpression: "cron(0 0 * * ? *)"  # Run daily at midnight UTC
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt TradingBotLambda.Arn
+          Id: "TradingBotTarget"
+
+  # Permission for EventBridge to invoke Lambda
+  TradingBotSchedulePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref TradingBotLambda
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt TradingBotScheduleRule.Arn
+
+  # Use the existing database resources from the main template
+  DatabaseSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow Lambda to access database
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref LambdaSecurityGroup
+
+  LambdaSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for Lambda function
+      VpcId: !Ref VPC
+
+Outputs:
+  LambdaFunctionArn:
+    Description: Lambda Function ARN
+    Value: !GetAtt TradingBotLambda.Arn
+
+  LambdaFunctionName:
+    Description: Lambda Function Name
+    Value: !Ref TradingBotLambda
