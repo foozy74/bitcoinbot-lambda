@@ -5,7 +5,7 @@ class MovingAverageCrossover:
     def __init__(self, short_window, long_window, initial_balance):
         self.short_window = short_window
         self.long_window = long_window
-        self.initial_balance = initial_balance
+        self.initial_balance = float(initial_balance)
 
     def generate_signals(self, data):
         signals = data.copy()
@@ -34,12 +34,12 @@ class MovingAverageCrossover:
         signals = self.generate_signals(data)
         portfolio = pd.DataFrame(index=signals.index)
 
-        # Initialize portfolio metrics
-        portfolio['position'] = signals['position']
-        portfolio['close'] = signals['close']
-        portfolio['cash'] = self.initial_balance
-        portfolio['holdings'] = 0.0
-        portfolio['portfolio_value'] = self.initial_balance
+        # Initialize portfolio metrics with explicit data types
+        portfolio['position'] = signals['position'].astype(float)
+        portfolio['close'] = signals['close'].astype(float)
+        portfolio['cash'] = pd.Series(self.initial_balance, index=portfolio.index, dtype=float)
+        portfolio['holdings'] = pd.Series(0.0, index=portfolio.index, dtype=float)
+        portfolio['portfolio_value'] = pd.Series(self.initial_balance, index=portfolio.index, dtype=float)
 
         # Initialize trade history
         trades = []
@@ -52,8 +52,8 @@ class MovingAverageCrossover:
             if portfolio['position'].iloc[i] == 1:  # Buy signal
                 entry_price = portfolio['close'].iloc[i]
                 btc_amount = portfolio['cash'].iloc[i] / entry_price
-                portfolio.loc[portfolio.index[i:], 'holdings'] = btc_amount
-                portfolio.loc[portfolio.index[i:], 'cash'] = 0
+                portfolio.loc[portfolio.index[i:], 'holdings'] = float(btc_amount)
+                portfolio.loc[portfolio.index[i:], 'cash'] = 0.0
                 position = 1
 
                 trades.append({
@@ -67,9 +67,9 @@ class MovingAverageCrossover:
             elif portfolio['position'].iloc[i] == -1 and position == 1:  # Sell signal
                 exit_price = portfolio['close'].iloc[i]
                 btc_amount = portfolio['holdings'].iloc[i]
-                cash_value = btc_amount * exit_price
+                cash_value = float(btc_amount * exit_price)
                 portfolio.loc[portfolio.index[i:], 'cash'] = cash_value
-                portfolio.loc[portfolio.index[i:], 'holdings'] = 0
+                portfolio.loc[portfolio.index[i:], 'holdings'] = 0.0
                 position = 0
 
                 trades.append({
@@ -80,8 +80,8 @@ class MovingAverageCrossover:
                     'value': float(cash_value)
                 })
 
-            # Update portfolio value
-            portfolio.loc[portfolio.index[i], 'portfolio_value'] = (
+            # Update portfolio value with explicit float casting
+            portfolio.loc[portfolio.index[i], 'portfolio_value'] = float(
                 portfolio['cash'].iloc[i] +
                 portfolio['holdings'].iloc[i] * portfolio['close'].iloc[i]
             )

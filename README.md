@@ -2,19 +2,40 @@ git clone https://github.com/foozy74/Bitcoinbot.git
 cd Bitcoinbot
 ```
 
-2. Install dependencies:
-The project uses Replit's package management. Required packages:
-- streamlit
-- pandas
-- numpy
-- plotly
-- python-dotenv
-- boto3
-- ccxt
-- sqlalchemy
-- psycopg2-binary
+2. Set up your development environment:
+```bash
+python setup_local.py
+```
+This script will:
+- Check Python version compatibility
+- Install required dependencies
+- Create local environment configuration
 
-### Repository Synchronization
+3. Start the application:
+```bash
+streamlit run trading_bot.py
+```
+
+## Features
+- Real-time Bitcoin price monitoring
+- Moving Average Crossover strategy implementation
+- Interactive backtesting with customizable parameters
+- Performance metrics visualization
+- Trade history tracking
+- PostgreSQL database integration for trade logging
+
+## Required Packages
+- streamlit: Web application framework
+- pandas: Data manipulation and analysis
+- numpy: Numerical computing
+- plotly: Interactive visualizations
+- python-dotenv: Environment variable management
+- boto3: AWS SDK for Python
+- ccxt: Cryptocurrency exchange API
+- sqlalchemy: Database ORM
+- psycopg2-binary: PostgreSQL adapter
+
+## Repository Synchronization
 
 To sync your local repository with the latest changes:
 
@@ -29,10 +50,3 @@ Options:
 Example:
 ```bash
 python sync_repo.py --branch development
-```
-
-### Running the Application
-
-1. Start the Streamlit application:
-```bash
-streamlit run trading_bot.py
