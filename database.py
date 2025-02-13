@@ -14,7 +14,7 @@ Base = declarative_base()
 
 class Trade(Base):
     __tablename__ = "trades"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     timestamp = Column(DateTime, default=datetime.utcnow)
     type = Column(String)  # 'BUY' or 'SELL'
@@ -24,7 +24,7 @@ class Trade(Base):
 
 class Performance(Base):
     __tablename__ = "performance"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     date = Column(DateTime, unique=True, index=True)
     portfolio_value = Column(Float)
@@ -35,7 +35,7 @@ class Performance(Base):
 
 class Settings(Base):
     __tablename__ = "settings"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     short_window = Column(Integer)
     long_window = Column(Integer)
@@ -56,12 +56,17 @@ def get_db():
 
 def save_trade(db, trade_data):
     """Save trade to database"""
+    # Convert pandas Timestamp to datetime if necessary
+    timestamp = trade_data['date']
+    if hasattr(timestamp, 'to_pydatetime'):
+        timestamp = timestamp.to_pydatetime()
+
     trade = Trade(
-        timestamp=trade_data['date'],
+        timestamp=timestamp,
         type=trade_data['type'],
-        price=trade_data['price'],
-        amount=trade_data['amount'],
-        value=trade_data['value']
+        price=float(trade_data['price']),
+        amount=float(trade_data['amount']),
+        value=float(trade_data['value'])
     )
     db.add(trade)
     db.commit()
@@ -69,13 +74,17 @@ def save_trade(db, trade_data):
 
 def save_performance(db, metrics, date):
     """Save daily performance metrics"""
+    # Convert pandas Timestamp to datetime if necessary
+    if hasattr(date, 'to_pydatetime'):
+        date = date.to_pydatetime()
+
     performance = Performance(
         date=date,
-        portfolio_value=metrics['portfolio_value'],
-        daily_return=metrics.get('daily_return', 0),
-        total_return=metrics['total_return'],
-        sharpe_ratio=metrics['sharpe_ratio'],
-        max_drawdown=metrics['max_drawdown']
+        portfolio_value=float(metrics['portfolio_value']),
+        daily_return=float(metrics.get('daily_return', 0)),
+        total_return=float(metrics['total_return']),
+        sharpe_ratio=float(metrics['sharpe_ratio']),
+        max_drawdown=float(metrics['max_drawdown'])
     )
     db.add(performance)
     db.commit()
@@ -86,7 +95,7 @@ def save_settings(db, settings):
     setting = Settings(
         short_window=settings['short_window'],
         long_window=settings['long_window'],
-        initial_balance=settings['initial_balance'],
+        initial_balance=float(settings['initial_balance']),
         timeframe=settings['timeframe'],
         lookback_period=settings['lookback_period']
     )
