@@ -57,7 +57,7 @@ def get_db():
 def save_trade(db, trade_data):
     """Save trade to database"""
     # Convert pandas Timestamp to datetime if necessary
-    timestamp = trade_data['date']
+    timestamp = trade_data.get('timestamp', datetime.utcnow())
     if hasattr(timestamp, 'to_pydatetime'):
         timestamp = timestamp.to_pydatetime()
 
