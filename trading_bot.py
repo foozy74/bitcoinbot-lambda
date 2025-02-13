@@ -7,6 +7,7 @@ import ccxt
 from strategy import MovingAverageCrossover
 from utils import calculate_metrics, format_number
 from database import get_db, save_trade, save_performance, save_settings
+from config import APP_CONFIG, TRADING_CONFIG
 
 # Page config
 st.set_page_config(page_title="Bitcoin Trading Bot", layout="wide")
@@ -27,14 +28,14 @@ lookback_period = st.sidebar.slider(
     "Lookback Period (days)",
     min_value=30,
     max_value=365,
-    value=100
+    value=TRADING_CONFIG['default_lookback']
 )
 
 initial_balance = st.sidebar.number_input(
     "Initial Balance (USD)",
     min_value=1000,
     max_value=1000000,
-    value=10000
+    value=TRADING_CONFIG['default_initial_balance']
 )
 
 # Strategy parameters
